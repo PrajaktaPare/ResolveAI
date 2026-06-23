@@ -3,7 +3,6 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute, PublicOnlyRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
-import { AuthLayout } from "@/layouts/AuthLayout";
 import { ROUTES } from "@/utils/constants";
 
 // Pages
@@ -37,11 +36,9 @@ export default function App() {
 
             {/* Public-only routes (redirects to dashboard if logged in) */}
             <Route element={<PublicOnlyRoute />}>
-              <Route element={<AuthLayout />}>
-                <Route path={ROUTES.LOGIN} element={<Login />} />
-                <Route path={ROUTES.REGISTER} element={<Register />} />
-                <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-              </Route>
+              <Route path={ROUTES.LOGIN} element={<Login />} />
+              <Route path={ROUTES.REGISTER} element={<Register />} />
+              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
             </Route>
 
             {/* Protected routes */}
