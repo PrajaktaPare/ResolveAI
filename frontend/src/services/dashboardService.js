@@ -1,12 +1,18 @@
+/**
+ * @file dashboardService.js
+ * @description Service layer for retrieving dashboard impact metrics and charts telemetry.
+ * Communicates with the Express backend, falling back to mock datasets if endpoints are offline.
+ */
+
 import { api } from "@/config/api";
 import logger from "@/utils/logger";
 
 /**
- * Dashboard / impact analytics service.
- * Talks to the Express backend. Falls back to mock data when the API is
- * unavailable so the UI remains demoable without a running backend.
+ * buildMockStats
+ * Computes and returns fallback mockup datasets to ensure UI is functional in offline configurations.
+ * 
+ * @returns {Object} Static data matching standard metrics configurations.
  */
-
 function buildMockStats() {
   return {
     totals: {
@@ -43,14 +49,20 @@ function buildMockStats() {
   };
 }
 
+// Service registry holding dashboard fetching methods
 export const dashboardService = {
+  /**
+   * getStats
+   * Fetches general metrics and category count splits for visual dashboard panels.
+   */
   async getStats() {
     try {
       const { data } = await api.get("/dashboard/stats");
       return data?.data ?? data;
     } catch (error) {
-      logger.warn("Dashboard API unavailable, using mock data", error.message);
+      logger.warn("Dashboard API unavailable, using mock data fallback:", error.message);
       return buildMockStats();
     }
   },
 };
+

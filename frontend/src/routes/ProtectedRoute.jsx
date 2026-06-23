@@ -1,16 +1,26 @@
+/**
+ * @file ProtectedRoute.jsx
+ * @description Authentication guards for React Router.
+ * Gates private routes requiring authentication, and blocks logged-in users from public pages (like login/register).
+ */
+
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingState } from "@/components/common/States";
 import { ROUTES } from "@/utils/constants";
 
 /**
- * Gate that requires an authenticated session.
- * Optionally requires admin/moderator role via `requireAdmin`.
+ * ProtectedRoute
+ * Route guard component that requires an authenticated session.
+ * Optionally screens users for admin/moderator credentials via requireAdmin flag.
+ * 
+ * @param {Object} props - Component property arguments.
  */
 export function ProtectedRoute({ requireAdmin = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   const location = useLocation();
 
+  // 1. Render spinner while auth session status is being verified
   if (loading) {
     return (
       <div className="grid min-h-screen place-items-center">
@@ -19,19 +29,23 @@ export function ProtectedRoute({ requireAdmin = false }) {
     );
   }
 
+  // 2. Redirect to Login if the user is unauthenticated, retaining destination target path in state
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
+  // 3. Block access to admin panel if administrator privileges are missing
   if (requireAdmin && !isAdmin) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
 
+  // 4. Render children routes
   return <Outlet />;
 }
 
 /**
- * Redirects authenticated users away from public-only pages (login/register).
+ * PublicOnlyRoute
+ * Redirects authenticated users away from public pages (login, registration) directly to the dashboard.
  */
 export function PublicOnlyRoute() {
   const { isAuthenticated, loading } = useAuth();
@@ -50,3 +64,4 @@ export function PublicOnlyRoute() {
 
   return <Outlet />;
 }
+

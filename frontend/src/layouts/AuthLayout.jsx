@@ -1,9 +1,16 @@
+/**
+ * @file AuthLayout.jsx
+ * @description Layout wrapper template for authentication routes (login, registration, forgot-password).
+ * Features a split-screen brand dashboard panel on desktop and matches light/dark theme settings.
+ */
+
 import { Link, Outlet } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/common/Logo";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { APP_TAGLINE } from "@/utils/constants";
 
+// Brand panel promotional highlight bullets
 const HIGHLIGHTS = [
   "AI-powered issue categorization & severity scoring",
   "Community verification and civic priority engine",
@@ -11,10 +18,16 @@ const HIGHLIGHTS = [
   "Live impact dashboard and community health scores",
 ];
 
+/**
+ * AuthLayout
+ * Split-layout design structure.
+ * 
+ * @param {Object} props - Component properties.
+ */
 export function AuthLayout({ children }) {
   return (
     <div className="flex min-h-screen flex-col bg-background lg:flex-row">
-      {/* Brand panel */}
+      {/* Sidebar Brand/Marketing Panel (hidden on viewport widths below desktop lg break-points) */}
       <aside className="relative hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex lg:w-[44%]">
         <Link to="/" className="inline-flex">
           <Logo size="lg" className="[&_span.text-primary]:text-primary-foreground/80" />
@@ -41,9 +54,10 @@ export function AuthLayout({ children }) {
         </p>
       </aside>
 
-      {/* Form panel */}
+      {/* Main Container Form Panel */}
       <main className="flex flex-1 flex-col">
         <header className="flex items-center justify-between p-6">
+          {/* Mobil logo representation */}
           <Link to="/" className="inline-flex lg:hidden">
             <Logo />
           </Link>
@@ -53,6 +67,7 @@ export function AuthLayout({ children }) {
         </header>
         <div className="flex flex-1 items-center justify-center px-6 pb-12">
           <div className="w-full max-w-md animate-in">
+            {/* Render children or nested routes from react-router outlet */}
             {children || <Outlet />}
             <p className="mt-8 text-center text-xs text-muted-foreground lg:hidden">
               {APP_TAGLINE}
@@ -63,3 +78,4 @@ export function AuthLayout({ children }) {
     </div>
   );
 }
+

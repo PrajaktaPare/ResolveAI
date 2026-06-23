@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { LogIn, KeyRound, Mail, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { FormField } from "@/components/common/FormField";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/utils/constants";
@@ -15,106 +14,130 @@ import { logger } from "@/utils/logger";
 const log = logger.child("login");
 
 export default function Login() {
-  const { signIn, configured } = useAuth();
+  const { signIn, verifyOtp, configured } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showPassword, setShowPassword] = useState(false);
+  
+  const [step, setStep] = useState("email"); // "email" or "otp"
+  const [emailAddress, setEmailAddress] = useState("");
+  const [isSubmittingOtp, setIsSubmittingOtp] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { email: "", password: "" } });
+  } = useForm({ defaultValues: { email: "", otp: "" } });
 
   const redirectTo = location.state?.from?.pathname || ROUTES.DASHBOARD;
 
-  async function onSubmit(values) {
+  async function onSendOtp(values) {
     try {
-      await signIn(values);
+      setEmailAddress(values.email);
+      await signIn({ email: values.email });
+      toast.success("OTP verification code sent! Check your inbox.");
+      setStep("otp");
+    } catch (err) {
+      log.error("Failed to send OTP:", err.message);
+      toast.error(err.message || "Unable to send verification code. Try again.");
+    }
+  }
+
+  async function onVerifyOtp(values) {
+    try {
+      setIsSubmittingOtp(true);
+      await verifyOtp({ email: emailAddress, token: values.otp });
       toast.success("Welcome back!");
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      log.error("Login failed:", err.message);
-      toast.error(err.message || "Unable to sign in. Check your credentials.");
+      log.error("OTP verification failed:", err.message);
+      toast.error(err.message || "Invalid or expired verification code.");
+    } finally {
+      setIsSubmittingOtp(false);
     }
   }
 
   return (
     <AuthLayout>
-      <div className="space-y-2 text-center lg:text-left">
-        <h2 className="text-2xl font-bold text-foreground">Sign in to your account</h2>
-        <p className="text-sm text-muted-foreground">
-          Enter your credentials to access your civic dashboard.
-        </p>
-      </div>
-
-      {!configured && (
-        <p className="mt-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-          Supabase is not configured yet. Add your credentials to enable authentication.
-        </p>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
-        <FormField
-          id="email"
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          autoComplete="email"
-          error={errors.email?.message}
-          {...register("email", {
-            required: "Email is required",
-            pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
-          })}
-        />
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
-              Password
-            </label>
-            <Link
-              to={ROUTES.FORGOT_PASSWORD}
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              Forgot password?
-            </Link>
+      {step === "email" ? (
+        <>
+          <div className="space-y-2 text-center lg:text-left">
+            <h2 className="text-2xl font-bold text-foreground">Sign in to your account</h2>
+            <p className="text-sm text-muted-foreground">
+              Enter your email address to receive a one-time verification code.
+            </p>
           </div>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              aria-invalid={Boolean(errors.password)}
-              className={errors.password ? "border-destructive pr-10" : "pr-10"}
-              {...register("password", { required: "Password is required" })}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
-          </div>
-          {errors.password && (
-            <p className="text-xs font-medium text-destructive" role="alert">
-              {errors.password.message}
+
+          {!configured && (
+            <p className="mt-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              Supabase is not configured yet. Using mock verification mode (enter any code).
             </p>
           )}
-        </div>
 
-        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <Spinner className="text-primary-foreground" />
-          ) : (
-            <LogIn className="size-4" />
-          )}
-          {isSubmitting ? "Signing in..." : "Sign in"}
-        </Button>
-      </form>
+          <form onSubmit={handleSubmit(onSendOtp)} className="mt-6 space-y-4" noValidate>
+            <FormField
+              id="email"
+              label="Email Address"
+              type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              error={errors.email?.message}
+              {...register("email", {
+                required: "Email is required",
+                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
+              })}
+            />
+
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <Spinner className="text-primary-foreground" />
+              ) : (
+                <Mail className="size-4" />
+              )}
+              {isSubmitting ? "Sending code..." : "Send Verification Code"}
+            </Button>
+          </form>
+        </>
+      ) : (
+        <>
+          <div className="space-y-2 text-center lg:text-left">
+            <button
+              onClick={() => setStep("email")}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+            >
+              <ArrowLeft className="size-3" />
+              Back to email
+            </button>
+            <h2 className="text-2xl font-bold text-foreground">Enter verification code</h2>
+            <p className="text-sm text-muted-foreground">
+              We sent a 6-digit OTP code to <strong className="text-foreground">{emailAddress}</strong>.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit(onVerifyOtp)} className="mt-6 space-y-4" noValidate>
+            <FormField
+              id="otp"
+              label="One-Time Verification Code"
+              type="text"
+              placeholder="123456"
+              autoComplete="one-time-code"
+              error={errors.otp?.message}
+              {...register("otp", {
+                required: "Verification code is required",
+                pattern: { value: /^\d{6}$/, message: "Code must be exactly 6 digits" },
+              })}
+            />
+
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmittingOtp}>
+              {isSubmittingOtp ? (
+                <Spinner className="text-primary-foreground" />
+              ) : (
+                <KeyRound className="size-4" />
+              )}
+              {isSubmittingOtp ? "Verifying..." : "Verify & Sign In"}
+            </Button>
+          </form>
+        </>
+      )}
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

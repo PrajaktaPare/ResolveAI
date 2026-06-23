@@ -30,6 +30,11 @@ export default function App() {
             {/* Public routes */}
             <Route path={ROUTES.HOME} element={<Landing />} />
 
+            {/* Public routes utilizing MainLayout shell */}
+            <Route element={<MainLayout />}>
+              <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+            </Route>
+
             {/* Public-only routes (redirects to dashboard if logged in) */}
             <Route element={<PublicOnlyRoute />}>
               <Route element={<AuthLayout />}>
@@ -42,7 +47,6 @@ export default function App() {
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
-                <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
                 <Route path={ROUTES.REPORT} element={<Report />} />
                 <Route path={ROUTES.ISSUES} element={<Issues />} />
                 <Route path={`${ROUTES.ISSUES}/:issueId`} element={<IssueDetail />} />

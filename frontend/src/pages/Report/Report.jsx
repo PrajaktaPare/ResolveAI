@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { Camera, MapPin, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Camera, MapPin, AlertCircle, X, Film, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -55,7 +55,15 @@ export default function Report() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [preview, setPreview] = useState(null);
+  
+  // Media pipeline states
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+
+  // Duplicate detection states
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateIssues, setDuplicateIssues] = useState([]);
+  const [pendingSubmitData, setPendingSubmitData] = useState(null);
 
   // Default center at New York City
   const defaultCenter = [40.7128, -74.006];
@@ -113,12 +121,52 @@ export default function Report() {
   };
 
   const onSubmit = async (data) => {
+    await submitData(data, false);
+  };
+
+  const submitData = async (data, bypassDuplicateCheck = false) => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log("[v0] Report submitted:", data);
-      const response = await api.post("/issues", data);
+      // Perform duplicate check if not bypassed
+      if (!bypassDuplicateCheck) {
+        toast.info("Checking for nearby duplicates...");
+        const { data: dupData } = await api.get("/issues/check-duplicate", {
+          params: {
+            latitude: data.latitude,
+            longitude: data.longitude,
+          },
+        });
+
+        if (dupData?.hasDuplicates && dupData.duplicates.length > 0) {
+          setDuplicateIssues(dupData.duplicates);
+          setPendingSubmitData(data);
+          setShowDuplicateModal(true);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // If no duplicates or user chose to bypass:
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("category", data.category);
+      formData.append("riskLevel", data.riskLevel);
+      formData.append("latitude", data.latitude);
+      formData.append("longitude", data.longitude);
+
+      selectedFiles.forEach((file) => {
+        formData.append("media", file);
+      });
+
+      console.log("[issues] Report submitting FormData with files count:", selectedFiles.length);
+      await api.post("/issues", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       
       toast.success("Issue reported successfully!");
       setSuccess(true);
@@ -135,22 +183,51 @@ export default function Report() {
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    
+    // Size and validation checks
+    const validFiles = [];
+    const newPreviews = [...previews];
+
+    files.forEach((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File "${file.name}" exceeds 10MB limit`);
+        return;
+      }
+      
+      validFiles.push(file);
+
+      // Create preview URL
+      const fileUrl = URL.createObjectURL(file);
+      const isVideo = file.type.startsWith("video/");
+      
+      newPreviews.push({
+        name: file.name,
+        type: file.type,
+        url: fileUrl,
+        isVideo,
+      });
+    });
+
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
+    setPreviews(newPreviews);
+  };
+
+  const removeFile = (index) => {
+    // Revoke the object URL to avoid memory leaks
+    if (previews[index]) {
+      URL.revokeObjectURL(previews[index].url);
     }
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (success) {
     return (
       <SuccessState
         title="Report Submitted"
-        message="Thank you! Your issue report has been received and will be reviewed by our team."
+        message="Thank you! Your issue report has been received and is being analyzed by the Gemini Vision agent."
         action={{
           label: "View All Issues",
           onClick: () => navigate(ROUTES.ISSUES),
@@ -170,63 +247,77 @@ export default function Report() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 pb-12">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Report an Issue</h1>
         <p className="mt-2 text-muted-foreground">
-          Help us improve your community by reporting civic issues with details and location.
+          Help us improve your community by reporting civic issues with details, location, and photos/videos.
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Photo/Media */}
+        {/* Photo/Media Upload */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              Media
+              Upload Photos or Videos
             </CardTitle>
             <CardDescription>
-              Attach a photo or video of the issue (optional but recommended)
+              Attach visual proofs of the issue. Media files will be analyzed by Gemini AI to extract insights. (Max 10MB per file)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
-              {preview ? (
-                <div className="space-y-3">
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="mx-auto h-40 w-40 rounded-lg object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setPreview(null);
-                      document.getElementById("photo-input").value = "";
-                    }}
-                  >
-                    Remove Photo
-                  </Button>
+            <div className="rounded-lg border-2 border-dashed border-border p-6 text-center hover:border-primary/50 transition-colors">
+              <label className="cursor-pointer block">
+                <div className="space-y-2">
+                  <Camera className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm font-medium text-foreground">Click to upload media</p>
+                  <p className="text-xs text-muted-foreground">Accepts images and video files</p>
                 </div>
-              ) : (
-                <label className="cursor-pointer">
-                  <div className="space-y-2">
-                    <Camera className="mx-auto h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium text-foreground">Upload a photo</p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
-                  </div>
-                  <input
-                    id="photo-input"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
+                <input
+                  id="media-input"
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
             </div>
+
+            {previews.length > 0 && (
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                {previews.map((preview, index) => (
+                  <div key={index} className="relative rounded-lg border border-border bg-muted/40 p-2 group overflow-hidden">
+                    {preview.isVideo ? (
+                      <div className="flex h-32 items-center justify-center bg-black/10 rounded-md">
+                        <Film className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <img
+                        src={preview.url}
+                        alt={`Preview ${index}`}
+                        className="h-32 w-full rounded-md object-cover"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="rounded-full bg-destructive p-2 text-destructive-foreground hover:bg-destructive/80 transition-colors"
+                        title="Remove file"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground truncate px-1">
+                      {preview.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -391,6 +482,79 @@ export default function Report() {
           </Button>
         </div>
       </form>
+
+      {/* Duplicate Warning Modal */}
+      {showDuplicateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-warning">
+              <AlertCircle className="h-6 w-6 text-yellow-500" />
+              <h3 className="text-xl font-bold text-foreground">Possible Duplicate Issues Found</h3>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We detected existing reports reported within 200 meters of your coordinates. You can join/view an existing issue or submit your new report anyway.
+            </p>
+
+            <div className="mt-4 max-h-[200px] overflow-y-auto space-y-3 pr-1">
+              {duplicateIssues.map((dup) => (
+                <div key={dup.id} className="rounded-lg border border-border bg-muted/40 p-3 hover:bg-muted/80 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">{dup.title}</h4>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{dup.description}</p>
+                      <div className="mt-2 flex gap-2">
+                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary capitalize">
+                          {dup.category}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-medium text-secondary-foreground uppercase">
+                          {dup.status}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground self-center">
+                          {Math.round(dup.distance)}m away
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowDuplicateModal(false);
+                        navigate(`/issues/${dup.id}`);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={() => {
+                  setShowDuplicateModal(false);
+                  submitData(pendingSubmitData, true);
+                }}
+              >
+                Create New Report Anyway
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDuplicateModal(false);
+                  setPendingSubmitData(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

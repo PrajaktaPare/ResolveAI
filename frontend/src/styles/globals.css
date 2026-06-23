@@ -4,14 +4,17 @@
 
 /*
   ResolveAI Design System
-  - Primary: teal (trust, civic)
-  - Neutrals: slate grays
-  - Accent: amber (priority/warning), red (critical), green (resolved)
+  - Theme colors configured in modern OKLCH format for wide-gamut and perceptually uniform color adjustments.
+  - Primary Theme: Teal (representing public trust and civic cooperation)
+  - Neutrals: Slate and grays
+  - Accents: Amber (status/warning), Red (critical), Green (resolved/success)
 */
 
 :root {
+  /* Border radius standard value */
   --radius: 0.625rem;
 
+  /* Theme variables - Light Mode configuration */
   --background: oklch(0.99 0.003 240);
   --foreground: oklch(0.21 0.02 250);
 
@@ -46,12 +49,14 @@
   --input: oklch(0.91 0.01 240);
   --ring: oklch(0.52 0.1 192);
 
+  /* Telemetry metrics charts colors */
   --chart-1: oklch(0.52 0.1 192);
   --chart-2: oklch(0.72 0.15 70);
   --chart-3: oklch(0.58 0.21 27);
   --chart-4: oklch(0.6 0.13 155);
   --chart-5: oklch(0.55 0.08 250);
 
+  /* Layout side navigation bar variables */
   --sidebar: oklch(0.98 0.005 240);
   --sidebar-foreground: oklch(0.21 0.02 250);
   --sidebar-primary: oklch(0.52 0.1 192);
@@ -63,6 +68,7 @@
 }
 
 .dark {
+  /* Theme variables - Dark Mode configuration */
   --background: oklch(0.17 0.015 250);
   --foreground: oklch(0.95 0.01 240);
 
@@ -114,10 +120,12 @@
 }
 
 @theme inline {
+  /* Font Families configuration */
   --font-sans:
     "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
+  /* Theme mappings for class utilities */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -155,6 +163,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Calculated border radius tiers */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -162,6 +171,7 @@
 }
 
 @layer base {
+  /* Base element settings overrides */
   * {
     border-color: var(--border);
   }
@@ -181,11 +191,13 @@
     min-height: 100vh;
   }
 
+  /* Accessibility focus outline styles */
   *:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 
+  /* Webkit custom scrollbars adjustments */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -203,6 +215,7 @@
 }
 
 @layer utilities {
+  /* Custom micro-animations classes */
   .animate-in {
     animation: fade-in 0.3s ease-out;
   }
@@ -217,3 +230,4 @@
     }
   }
 }
+

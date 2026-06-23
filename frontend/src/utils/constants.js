@@ -1,12 +1,19 @@
+/**
+ * @file constants.js
+ * @description Global configuration parameters, route paths, styling tones, and domain enum mappings.
+ */
+
 export const APP_NAME = "ResolveAI";
 export const APP_TAGLINE = "From Reporting Problems to Resolving Communities.";
 
+// User credential roles definition
 export const ROLES = {
   CITIZEN: "citizen",
   MODERATOR: "moderator",
   ADMIN: "admin",
 };
 
+// Available categories for filing civic issues
 export const ISSUE_CATEGORIES = [
   { value: "pothole", label: "Pothole" },
   { value: "garbage", label: "Garbage Dump" },
@@ -18,6 +25,7 @@ export const ISSUE_CATEGORIES = [
   { value: "other", label: "Other" },
 ];
 
+// Issue resolution status options mapped to UI badge tone colors
 export const ISSUE_STATUSES = [
   { value: "reported", label: "Reported", tone: "muted" },
   { value: "verified", label: "Verified", tone: "primary" },
@@ -29,6 +37,7 @@ export const ISSUE_STATUSES = [
   { value: "duplicate", label: "Duplicate", tone: "muted" },
 ];
 
+// Linear state cycle flow for issue lifecycle transitions
 export const STATUS_FLOW = [
   "reported",
   "verified",
@@ -38,6 +47,7 @@ export const STATUS_FLOW = [
   "resolved",
 ];
 
+// Severity risk options mapped to UI badge tone colors
 export const RISK_LEVELS = [
   { value: "low", label: "Low", tone: "success" },
   { value: "medium", label: "Medium", tone: "warning" },
@@ -45,6 +55,7 @@ export const RISK_LEVELS = [
   { value: "critical", label: "Critical", tone: "destructive" },
 ];
 
+// Application URL routes mappings for react-router config
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
@@ -60,4 +71,6 @@ export const ROUTES = {
   ADMIN: "/admin",
 };
 
+// LocalStorage key tag for display theme settings
 export const THEME_STORAGE_KEY = "resolveai-theme";
+
