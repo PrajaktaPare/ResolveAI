@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, AlertCircle, Filter, Grid3x3, ThumbsUp, Calendar } from "lucide-react";
+import { MapPin, AlertCircle, Filter, Grid3x3, ThumbsUp, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -37,6 +37,225 @@ function ChangeView({ center, zoom }) {
   return null;
 }
 
+// Geographic Location hierarchy data for map centering
+const LOCATIONS_DATA = {
+  countries: [
+    {
+      name: "India",
+      code: "IN",
+      center: [20.5937, 78.9629],
+      zoom: 5,
+      states: [
+        {
+          name: "Delhi",
+          center: [28.6139, 77.2090],
+          zoom: 10,
+          districts: [
+            {
+              name: "New Delhi",
+              center: [28.6139, 77.2090],
+              zoom: 12,
+              areas: [
+                { name: "Connaught Place", center: [28.6304, 77.2177], zoom: 15 },
+                { name: "Chanakyapuri", center: [28.5916, 77.1856], zoom: 15 },
+                { name: "Karol Bagh", center: [28.6514, 77.1907], zoom: 15 },
+              ]
+            },
+            {
+              name: "South Delhi",
+              center: [28.5300, 77.2200],
+              zoom: 12,
+              areas: [
+                { name: "Saket", center: [28.5244, 77.2066], zoom: 15 },
+                { name: "Hauz Khas", center: [28.5494, 77.2001], zoom: 15 },
+                { name: "Greater Kailash", center: [28.5482, 77.2347], zoom: 15 },
+              ]
+            },
+            {
+              name: "North Delhi",
+              center: [28.6826, 77.2250],
+              zoom: 12,
+              areas: [
+                { name: "Civil Lines", center: [28.6826, 77.2250], zoom: 15 },
+                { name: "Pitampura", center: [28.6990, 77.1384], zoom: 15 },
+                { name: "Rohini", center: [28.7041, 77.1025], zoom: 15 },
+              ]
+            }
+          ]
+        },
+        {
+          name: "Maharashtra",
+          center: [19.7515, 75.7139],
+          zoom: 7,
+          districts: [
+            {
+              name: "Mumbai",
+              center: [19.0760, 72.8777],
+              zoom: 12,
+              areas: [
+                { name: "Nariman Point", center: [18.9269, 72.8228], zoom: 15 },
+                { name: "Bandra", center: [19.0596, 72.8295], zoom: 15 },
+                { name: "Andheri", center: [19.1136, 72.8697], zoom: 15 },
+              ]
+            },
+            {
+              name: "Pune",
+              center: [18.5204, 73.8567],
+              zoom: 12,
+              areas: [
+                { name: "Kothrud", center: [18.5074, 73.8077], zoom: 15 },
+                { name: "Koregaon Park", center: [18.5362, 73.8930], zoom: 15 },
+                { name: "Shivajinagar", center: [18.5312, 73.8446], zoom: 15 },
+              ]
+            },
+            {
+              name: "Nagpur",
+              center: [21.1458, 79.0882],
+              zoom: 12,
+              areas: [
+                { name: "Dharampeth", center: [21.1432, 79.0617], zoom: 15 },
+                { name: "Sadar", center: [21.1614, 79.0805], zoom: 15 },
+                { name: "Wardhaman Nagar", center: [21.1491, 79.1232], zoom: 15 },
+              ]
+            }
+          ]
+        },
+        {
+          name: "Karnataka",
+          center: [15.3173, 75.7139],
+          zoom: 7,
+          districts: [
+            {
+              name: "Bengaluru Urban",
+              center: [12.9716, 77.5946],
+              zoom: 12,
+              areas: [
+                { name: "Koramangala", center: [12.9352, 77.6244], zoom: 15 },
+                { name: "Indiranagar", center: [12.9784, 77.6408], zoom: 15 },
+                { name: "Whitefield", center: [12.9698, 77.7499], zoom: 15 },
+              ]
+            },
+            {
+              name: "Mysuru",
+              center: [12.2958, 76.6394],
+              zoom: 12,
+              areas: [
+                { name: "Gokulam", center: [12.3323, 76.6266], zoom: 15 },
+                { name: "Vidyaranyapuram", center: [12.2798, 76.6570], zoom: 15 },
+                { name: "Jayalakshmipuram", center: [12.3242, 76.6298], zoom: 15 },
+              ]
+            }
+          ]
+        },
+        {
+          name: "Tamil Nadu",
+          center: [11.1271, 78.6569],
+          zoom: 7,
+          districts: [
+            {
+              name: "Chennai",
+              center: [13.0827, 80.2707],
+              zoom: 12,
+              areas: [
+                { name: "Adyar", center: [13.0012, 80.2565], zoom: 15 },
+                { name: "T. Nagar", center: [13.0418, 80.2341], zoom: 15 },
+                { name: "Mylapore", center: [13.0333, 80.2686], zoom: 15 },
+              ]
+            },
+            {
+              name: "Coimbatore",
+              center: [11.0168, 76.9558],
+              zoom: 12,
+              areas: [
+                { name: "Gandhipuram", center: [11.0181, 76.9681], zoom: 15 },
+                { name: "Peelamedu", center: [11.0287, 77.0261], zoom: 15 },
+                { name: "RS Puram", center: [11.0118, 76.9446], zoom: 15 },
+              ]
+            }
+          ]
+        },
+        {
+          name: "Uttar Pradesh",
+          center: [26.8467, 80.9462],
+          zoom: 7,
+          districts: [
+            {
+              name: "Lucknow",
+              center: [26.8467, 80.9462],
+              zoom: 12,
+              areas: [
+                { name: "Hazratganj", center: [26.8505, 80.9442], zoom: 15 },
+                { name: "Gomti Nagar", center: [26.8488, 80.9995], zoom: 15 },
+                { name: "Aliganj", center: [26.8920, 80.9458], zoom: 15 },
+              ]
+            },
+            {
+              name: "Gautam Buddha Nagar (Noida)",
+              center: [28.5355, 77.3910],
+              zoom: 12,
+              areas: [
+                { name: "Sector 15", center: [28.5815, 77.3130], zoom: 15 },
+                { name: "Sector 62", center: [28.6186, 77.3695], zoom: 15 },
+                { name: "Sector 18", center: [28.5708, 77.3261], zoom: 15 },
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "United States",
+      code: "US",
+      center: [37.0902, -95.7129],
+      zoom: 4,
+      states: [
+        {
+          name: "New York",
+          center: [42.1657, -74.9481],
+          zoom: 7,
+          districts: [
+            {
+              name: "New York City",
+              center: [40.7128, -74.0060],
+              zoom: 11,
+              areas: [
+                { name: "Manhattan", center: [40.7831, -73.9712], zoom: 14 },
+                { name: "Brooklyn", center: [40.6782, -73.9442], zoom: 14 },
+                { name: "Queens", center: [40.7282, -73.7949], zoom: 14 },
+              ]
+            }
+          ]
+        },
+        {
+          name: "California",
+          center: [36.7783, -119.4179],
+          zoom: 6,
+          districts: [
+            {
+              name: "Los Angeles",
+              center: [34.0522, -118.2437],
+              zoom: 11,
+              areas: [
+                { name: "Hollywood", center: [34.0928, -118.3287], zoom: 14 },
+                { name: "Santa Monica", center: [34.0194, -118.4912], zoom: 14 },
+              ]
+            },
+            {
+              name: "San Francisco",
+              center: [37.7749, -122.4194],
+              zoom: 12,
+              areas: [
+                { name: "Financial District", center: [37.7954, -122.4027], zoom: 15 },
+                { name: "Mission District", center: [37.7599, -122.4148], zoom: 15 },
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
 // Function to generate color coded custom circle markers
 const createCustomIcon = (category) => {
   const colorMap = {
@@ -67,10 +286,105 @@ export default function Map() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [mapView, setMapView] = useState("map"); // default to interactive map
 
+  // Geographic state variables
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedArea, setSelectedArea] = useState("");
+
   // Center on New Delhi, India by default
   const defaultCenter = [28.6139, 77.2090];
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [mapZoom, setMapZoom] = useState(11);
+
+  // Geographic change handlers
+  const handleCountryChange = (e) => {
+    const val = e.target.value;
+    setSelectedCountry(val);
+    setSelectedState("");
+    setSelectedDistrict("");
+    setSelectedArea("");
+    
+    if (val) {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === val);
+      if (country) {
+        setMapCenter(country.center);
+        setMapZoom(country.zoom);
+      }
+    } else {
+      setMapCenter(defaultCenter);
+      setMapZoom(11);
+    }
+  };
+
+  const handleStateChange = (e) => {
+    const val = e.target.value;
+    setSelectedState(val);
+    setSelectedDistrict("");
+    setSelectedArea("");
+    
+    if (val) {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === selectedCountry);
+      const stateObj = country?.states.find((s) => s.name === val);
+      if (stateObj) {
+        setMapCenter(stateObj.center);
+        setMapZoom(stateObj.zoom);
+      }
+    } else {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === selectedCountry);
+      if (country) {
+        setMapCenter(country.center);
+        setMapZoom(country.zoom);
+      }
+    }
+  };
+
+  const handleDistrictChange = (e) => {
+    const val = e.target.value;
+    setSelectedDistrict(val);
+    setSelectedArea("");
+    
+    if (val) {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === selectedCountry);
+      const stateObj = country?.states.find((s) => s.name === selectedState);
+      const districtObj = stateObj?.districts.find((d) => d.name === val);
+      if (districtObj) {
+        setMapCenter(districtObj.center);
+        setMapZoom(districtObj.zoom);
+      }
+    } else {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === selectedCountry);
+      const stateObj = country?.states.find((s) => s.name === selectedState);
+      if (stateObj) {
+        setMapCenter(stateObj.center);
+        setMapZoom(stateObj.zoom);
+      }
+    }
+  };
+
+  const handleAreaChange = (e) => {
+    const val = e.target.value;
+    setSelectedArea(val);
+    
+    if (val) {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === selectedCountry);
+      const stateObj = country?.states.find((s) => s.name === selectedState);
+      const districtObj = stateObj?.districts.find((d) => d.name === selectedDistrict);
+      const areaObj = districtObj?.areas.find((a) => a.name === val);
+      if (areaObj) {
+        setMapCenter(areaObj.center);
+        setMapZoom(areaObj.zoom);
+      }
+    } else {
+      const country = LOCATIONS_DATA.countries.find((c) => c.name === selectedCountry);
+      const stateObj = country?.states.find((s) => s.name === selectedState);
+      const districtObj = stateObj?.districts.find((d) => d.name === selectedDistrict);
+      if (districtObj) {
+        setMapCenter(districtObj.center);
+        setMapZoom(districtObj.zoom);
+      }
+    }
+  };
 
   const { data, loading, error, refetch } = useFetch(
     async () => {
@@ -165,6 +479,101 @@ export default function Map() {
         </div>
       </div>
 
+      {/* Geographic Location Navigator */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base text-foreground">
+            <Globe className="h-4 w-4 text-primary animate-pulse" />
+            Geographic Location Navigator
+          </CardTitle>
+          <CardDescription>
+            Select a region to automatically pan and zoom the map focus
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Country</label>
+              <select
+                value={selectedCountry}
+                onChange={handleCountryChange}
+                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              >
+                <option value="">Select Country</option>
+                {LOCATIONS_DATA.countries.map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">State</label>
+              <select
+                value={selectedState}
+                onChange={handleStateChange}
+                disabled={!selectedCountry}
+                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground disabled:opacity-50 disabled:bg-muted"
+              >
+                <option value="">Select State</option>
+                {selectedCountry &&
+                  LOCATIONS_DATA.countries
+                    .find((c) => c.name === selectedCountry)
+                    ?.states.map((s) => (
+                      <option key={s.name} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">District</label>
+              <select
+                value={selectedDistrict}
+                onChange={handleDistrictChange}
+                disabled={!selectedState}
+                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground disabled:opacity-50 disabled:bg-muted"
+              >
+                <option value="">Select District</option>
+                {selectedState &&
+                  LOCATIONS_DATA.countries
+                    .find((c) => c.name === selectedCountry)
+                    ?.states.find((s) => s.name === selectedState)
+                    ?.districts.map((d) => (
+                      <option key={d.name} value={d.name}>
+                        {d.name}
+                      </option>
+                    ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Area / Village</label>
+              <select
+                value={selectedArea}
+                onChange={handleAreaChange}
+                disabled={!selectedDistrict}
+                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground disabled:opacity-50 disabled:bg-muted"
+              >
+                <option value="">Select Area / Village</option>
+                {selectedDistrict &&
+                  LOCATIONS_DATA.countries
+                    .find((c) => c.name === selectedCountry)
+                    ?.states.find((s) => s.name === selectedState)
+                    ?.districts.find((d) => d.name === selectedDistrict)
+                    ?.areas.map((a) => (
+                      <option key={a.name} value={a.name}>
+                        {a.name}
+                      </option>
+                    ))}
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filters */}
       <Card>
         <CardHeader className="pb-3">
@@ -180,7 +589,7 @@ export default function Map() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
               >
                 <option value="all">All Categories</option>
                 {ISSUE_CATEGORIES.map((cat) => (
@@ -196,7 +605,7 @@ export default function Map() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full mt-1.5 px-3 py-2 border border-input bg-card rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
               >
                 <option value="all">All Statuses</option>
                 {ISSUE_STATUSES.map((stat) => (
@@ -215,8 +624,12 @@ export default function Map() {
                   setCategoryFilter("all");
                   setStatusFilter("all");
                   setSelectedIssue(null);
+                  setSelectedCountry("");
+                  setSelectedState("");
+                  setSelectedDistrict("");
+                  setSelectedArea("");
                   setMapCenter(defaultCenter);
-                  setMapZoom(13);
+                  setMapZoom(11);
                 }}
               >
                 Clear Filters

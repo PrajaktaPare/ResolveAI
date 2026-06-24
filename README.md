@@ -123,29 +123,23 @@ erDiagram
 
 ## Tech Stack
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool with HMR
-- **React Router** - Routing
-- **TailwindCSS** - Styling
-- **React Hook Form** - Form handling
-- **Supabase Auth** - Authentication
-- **Leaflet & React-Leaflet** - OpenStreetMap interactive maps
-- **Recharts** - Data visualization
-- **Axios** - API client
-
-### Backend
-- **Express.js** - Node.js server
-- **Supabase** - PostgreSQL database & auth
-- **Pino** - Logging
-- **CORS/Helmet** - Security middleware
-- **Gemini API** - AI categorization (optional)
-
-### Infrastructure
-- Vercel (Frontend deployment)
-- Supabase (Database & Auth)
-- OpenStreetMap + Leaflet (Geolocation and Mapping)
-- Google Gemini (AI categorization)
+| Layer | Technology | Purpose & Description |
+| :--- | :--- | :--- |
+| **Frontend** | React 18 & Vite | Fast, responsive component framework and HMR bundle builder |
+| **Frontend** | React Router | Client-side route and navigation guard management |
+| **Frontend** | TailwindCSS | Modern utility-first CSS styling system |
+| **Frontend** | Leaflet & React-Leaflet | OpenStreetMap interactive markers and coordinates mapping |
+| **Frontend** | Recharts | Visual charts for community metrics and analytics |
+| **Frontend** | Axios & React Hook Form | HTTP client request handler and form validator |
+| **Backend** | Express.js (Node.js) | Fast, minimalist routing server and endpoints gateway |
+| **Backend** | Pino & Pino HTTP | Fast, structured logging for tracing and diagnostics |
+| **Backend** | Helmet & CORS | Header security hardening and cross-origin resource sharing |
+| **Database** | Supabase (PostgreSQL) | Relational database storage with Row-Level Security (RLS) |
+| **Database** | PostGIS Extension | Geospatial indexing and spatial proximity query support |
+| **Database** | Supabase Auth | Signups, user credentials, and session token checks |
+| **AI Integration** | Google Gemini API | Multimodal Vision model for automatic issue categorization |
+| **Hosting** | Vercel | Production hosting for React frontend |
+| **Hosting** | Railway | Production hosting for Express API server |
 
 ## Project Structure
 
