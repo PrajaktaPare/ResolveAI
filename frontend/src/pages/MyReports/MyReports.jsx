@@ -137,10 +137,6 @@ export default function MyReports() {
         icon={AlertCircle}
         title="No Reports Yet"
         message="You haven't reported any issues yet. Start by reporting an issue to help improve your community."
-        action={{
-          label: "Report an Issue",
-          href: ROUTES.REPORT,
-        }}
       />
     );
   }

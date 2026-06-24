@@ -135,12 +135,6 @@ export default function Issues() {
             {" "}found
           </p>
         </div>
-        <Link to={ROUTES.REPORT}>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Report an Issue
-          </Button>
-        </Link>
       </div>
 
       {/* Filters and Search */}

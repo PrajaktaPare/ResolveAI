@@ -65,8 +65,8 @@ export default function Report() {
   const [duplicateIssues, setDuplicateIssues] = useState([]);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
 
-  // Default center at New York City
-  const defaultCenter = [40.7128, -74.006];
+  // Default center at New Delhi, India
+  const defaultCenter = [28.6139, 77.2090];
   const [markerPosition, setMarkerPosition] = useState(null);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
@@ -434,7 +434,7 @@ export default function Report() {
                   id="latitude"
                   type="number"
                   step="0.000001"
-                  placeholder="e.g. 40.7128"
+                  placeholder="e.g. 28.6139"
                   {...register("latitude", { required: "Latitude is required" })}
                   className={errors.latitude ? "border-destructive" : ""}
                 />
@@ -448,7 +448,7 @@ export default function Report() {
                   id="longitude"
                   type="number"
                   step="0.000001"
-                  placeholder="e.g. -74.0060"
+                  placeholder="e.g. 77.2090"
                   {...register("longitude", { required: "Longitude is required" })}
                   className={errors.longitude ? "border-destructive" : ""}
                 />

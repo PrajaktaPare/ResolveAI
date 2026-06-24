@@ -67,10 +67,10 @@ export default function Map() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [mapView, setMapView] = useState("map"); // default to interactive map
 
-  // Center on New York by default (mock data center)
-  const defaultCenter = [40.7128, -74.006];
+  // Center on New Delhi, India by default
+  const defaultCenter = [28.6139, 77.2090];
   const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [mapZoom, setMapZoom] = useState(13);
+  const [mapZoom, setMapZoom] = useState(11);
 
   const { data, loading, error, refetch } = useFetch(
     async () => {

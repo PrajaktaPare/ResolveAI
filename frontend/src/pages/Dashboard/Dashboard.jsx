@@ -129,12 +129,6 @@ export default function Dashboard() {
                 Here&apos;s the latest impact across your community.
               </p>
             </div>
-            <Link to={ROUTES.REPORT}>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Report an Issue
-              </Button>
-            </Link>
           </div>
 
           {/* Stats row */}
@@ -190,8 +184,8 @@ export default function Dashboard() {
               <CardContent>
                 <div className="h-[300px] w-full rounded-md border border-border overflow-hidden relative z-10">
                   <MapContainer
-                    center={[40.7128, -74.006]}
-                    zoom={11}
+                    center={[28.6139, 77.2090]}
+                    zoom={10}
                     className="h-full w-full"
                     style={{ background: "#cbd5e1" }}
                   >
