@@ -58,11 +58,11 @@ export function AuthLayout({ children }) {
       <main className="flex flex-1 flex-col">
         <header className="flex items-center justify-between p-6">
           <Link
-            to={ROUTES.DASHBOARD}
+            to={ROUTES.HOME}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="size-4" />
-            Back to Dashboard
+            Back to Home
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/" className="inline-flex lg:hidden">
