@@ -12,13 +12,12 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Check if credentials are set to determine if Supabase auth should be enabled.
-// Real Supabase anon keys are JWTs that always start with 'eyJ'.
-// If they are placeholders like 'sb_publishable_...' or contain 'your-', we treat them as unconfigured.
+// Supports both the traditional JWT keys (starting with 'eyJ') and the new Supabase API keys (starting with 'sb_publishable_').
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
   supabaseAnonKey &&
-  supabaseAnonKey.startsWith("eyJ") &&
-  !supabaseUrl.includes("placeholder")
+  !supabaseUrl.includes("your-") &&
+  !supabaseAnonKey.includes("your-")
 );
 
 if (!isSupabaseConfigured) {
