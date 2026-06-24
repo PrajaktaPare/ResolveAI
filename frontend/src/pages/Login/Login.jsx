@@ -109,7 +109,7 @@ export default function Login() {
             </button>
             <h2 className="text-2xl font-bold text-foreground">Enter verification code</h2>
             <p className="text-sm text-muted-foreground">
-              We sent a 6-digit OTP code to <strong className="text-foreground">{emailAddress}</strong>.
+              We sent a verification code to <strong className="text-foreground">{emailAddress}</strong>.
             </p>
           </div>
 

@@ -172,7 +172,7 @@ export function AuthPopup() {
               </button>
               <h3 className="text-base font-semibold text-foreground">Verify OTP Code</h3>
               <p className="text-xs text-muted-foreground">
-                Enter the 6-digit verification code sent to <strong className="text-foreground">{emailAddress}</strong>.
+                Enter the verification code sent to <strong className="text-foreground">{emailAddress}</strong>.
               </p>
             </div>
 
