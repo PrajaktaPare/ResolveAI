@@ -41,96 +41,37 @@ const statusMap = {
  */
 router.get("/stats", async (req, res) => {
   try {
-    // 1. Fetch main dashboard stats view from Supabase PostgreSQL
-    const { data: statsData, error: statsError } = await supabase
-      .from("dashboard_stats")
-      .select("*")
-      .limit(1);
+    const tStart = Date.now();
 
-    if (statsError) {
-      log.error("Error fetching dashboard stats view:", statsError.message);
-    }
-
-    const row = statsData?.[0] || {};
-    const totals = {
-      total: Number(row.total_issues || 0),
-      resolved: Number(row.resolved || 0),
-      inProgress: Number(row.in_progress || 0),
-      pending: Number(row.pending || 0),
-      activeCitizens: Number(row.active_citizens || 0),
-      resolutionRate: Number(row.resolution_rate || 0),
-      avgResolutionDays: Number(row.avg_resolution_days || 0),
-    };
-
-    // Calculate dynamic community health score based on the resolution rate
-    const healthScore = totals.total > 0 ? Math.round(totals.resolutionRate) : 100;
-
-    // 2. Fetch categories distribution view
-    const { data: categoryData, error: categoryError } = await supabase
-      .from("issues_by_category")
-      .select("*");
-
-    if (categoryError) {
-      log.error("Error fetching categories count:", categoryError.message);
-    }
-
-    // Prepare default empty category items mapping
-    const defaultCategories = Object.keys(categoryMap).map(key => ({
-      name: categoryMap[key],
-      value: 0
-    }));
-    const byCategory = [...defaultCategories];
-    
-    // Merge actual database records into the category distribution array
-    if (categoryData) {
-      categoryData.forEach(row => {
-        const displayName = categoryMap[row.category] || row.category;
-        const existing = byCategory.find(c => c.name === displayName);
-        if (existing) {
-          existing.value = Number(row.count);
-        } else {
-          byCategory.push({ name: displayName, value: Number(row.count) });
-        }
-      });
-    }
-
-    // 3. Fetch status distribution view
-    const { data: statusData, error: statusError } = await supabase
-      .from("issues_by_status")
-      .select("*");
-
-    if (statusError) {
-      log.error("Error fetching status count:", statusError.message);
-    }
-
-    // Prepare default empty status items mapping
-    const defaultStatuses = Object.keys(statusMap).map(key => ({
-      name: statusMap[key],
-      value: 0
-    }));
-    const byStatus = [...defaultStatuses];
-    
-    // Merge actual database records into the status distribution array
-    if (statusData) {
-      statusData.forEach(row => {
-        const displayName = statusMap[row.status] || row.status;
-        const existing = byStatus.find(s => s.name === displayName);
-        if (existing) {
-          existing.value = Number(row.count);
-        } else {
-          byStatus.push({ name: displayName, value: Number(row.count) });
-        }
-      });
-    }
-
-    // 4. Fetch creation and resolution timestamps to build weekly activity logs dynamically
-    const { data: issuesDates, error: datesError } = await supabase
+    // Query issues table directly in a single operation
+    const { data: issuesRaw, error: issuesError } = await supabase
       .from("issues")
-      .select("created_at, resolved_at");
+      .select("category, status, user_id, created_at, resolved_at");
 
-    if (datesError) {
-      log.error("Error fetching trend issue dates:", datesError.message);
+    if (issuesError) {
+      log.error("Failed to retrieve issues for dashboard stats:", issuesError.message);
+      return res.status(500).json({ error: "Failed to fetch dashboard stats from database" });
     }
+
+    const total = issuesRaw.length;
+    let resolvedCount = 0;
+    let inProgressCount = 0;
+    let pendingCount = 0;
+    const uniqueUsers = new Set();
+    let totalResolutionTimeMs = 0;
+    let resolvedWithTimeCount = 0;
+
+    const categoryCounts = {};
+    const statusCounts = {};
+
+    // Initialize category map keys to 0
+    Object.keys(categoryMap).forEach(key => {
+      categoryCounts[categoryMap[key]] = 0;
+    });
+    // Initialize status map keys to 0
+    Object.keys(statusMap).forEach(key => {
+      statusCounts[statusMap[key]] = 0;
+    });
 
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
@@ -149,31 +90,91 @@ router.get("/stats", async (req, res) => {
       };
     }).reverse();
 
-    // Distribute issue records into their respective weeks based on date timestamps
-    if (issuesDates) {
-      issuesDates.forEach(issue => {
-        const createdDate = new Date(issue.created_at);
-        const resolvedDate = issue.resolved_at ? new Date(issue.resolved_at) : null;
-        
-        weeks.forEach(w => {
-          if (createdDate >= w.start && createdDate < w.end) {
-            w.reports++;
-          }
-          if (resolvedDate && resolvedDate >= w.start && resolvedDate < w.end) {
-            w.resolved++;
-          }
-        });
-      });
-    }
+    issuesRaw.forEach(issue => {
+      // 1. Count totals
+      if (issue.status === 'resolved') {
+        resolvedCount++;
+      } else if (issue.status === 'in_progress') {
+        inProgressCount++;
+      } else if (issue.status === 'reported') {
+        pendingCount++;
+      }
+      
+      if (issue.user_id) {
+        uniqueUsers.add(issue.user_id);
+      }
 
-    // Format weekly data list for chart visualization
+      // 2. Compute average resolution days
+      const createdDate = new Date(issue.created_at);
+      const resolvedDate = issue.resolved_at ? new Date(issue.resolved_at) : null;
+      
+      if (resolvedDate) {
+        const diffTime = resolvedDate.getTime() - createdDate.getTime();
+        if (diffTime >= 0) {
+          totalResolutionTimeMs += diffTime;
+          resolvedWithTimeCount++;
+        }
+      }
+
+      // 3. Category count aggregation
+      const categoryName = categoryMap[issue.category] || issue.category;
+      if (categoryName) {
+        categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+      }
+
+      // 4. Status count aggregation
+      const statusName = statusMap[issue.status] || issue.status;
+      if (statusName) {
+        statusCounts[statusName] = (statusCounts[statusName] || 0) + 1;
+      }
+
+      // 5. Weekly trend aggregation
+      weeks.forEach(w => {
+        if (createdDate >= w.start && createdDate < w.end) {
+          w.reports++;
+        }
+        if (resolvedDate && resolvedDate >= w.start && resolvedDate < w.end) {
+          w.resolved++;
+        }
+      });
+    });
+
+    const resolutionRate = total > 0 ? Number(((resolvedCount / total) * 100).toFixed(2)) : 0;
+    const avgResolutionDays = resolvedWithTimeCount > 0 
+      ? Number((totalResolutionTimeMs / (resolvedWithTimeCount * oneDay)).toFixed(1)) 
+      : 0;
+
+    const totals = {
+      total,
+      resolved: resolvedCount,
+      inProgress: inProgressCount,
+      pending: pendingCount,
+      activeCitizens: uniqueUsers.size,
+      resolutionRate,
+      avgResolutionDays,
+    };
+
+    // Community health score represents resolution rate (or 100 if no issues exist)
+    const healthScore = total > 0 ? Math.round(resolutionRate) : 100;
+
+    const byCategory = Object.keys(categoryCounts).map(name => ({
+      name,
+      value: categoryCounts[name]
+    })).sort((a, b) => b.value - a.value);
+
+    const byStatus = Object.keys(statusCounts).map(name => ({
+      name,
+      value: statusCounts[name]
+    })).sort((a, b) => b.value - a.value);
+
     const trend = weeks.map(w => ({
       week: w.label,
       reports: w.reports,
       resolved: w.resolved
     }));
 
-    // Send final compiled response structure
+    log.info(`Dashboard stats processed in ${Date.now() - tStart} ms`);
+
     res.json({
       totals,
       healthScore,
@@ -193,75 +194,101 @@ router.get("/stats", async (req, res) => {
  */
 router.get("/metrics", async (req, res) => {
   try {
-    // Query stats from the aggregate view
-    const { data: statsData } = await supabase
-      .from("dashboard_stats")
-      .select("*")
-      .limit(1);
+    const tStart = Date.now();
 
-    const row = statsData?.[0] || {};
-    const total = Number(row.total_issues || 0);
-    const resolved = Number(row.resolved || 0);
-    const pending = Number(row.pending || 0);
-    const inProgress = Number(row.in_progress || 0);
-    const activeCitizens = Number(row.active_citizens || 0);
-    const resolutionRate = Number(row.resolution_rate || 0);
-    const avgResolutionDays = Number(row.avg_resolution_days || 0);
+    // Query issues list and profiles count in parallel
+    const [
+      { data: issuesRaw, error: issuesError },
+      { count: totalUsers, error: usersError }
+    ] = await Promise.all([
+      supabase.from("issues").select("status, category, risk_level, priority, location, created_at, resolved_at, user_id"),
+      supabase.from("profiles").select("*", { count: "exact", head: true })
+    ]);
 
-    // Query total registered users count for citizen engagement rates
-    const { count: totalUsers } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
+    if (issuesError) {
+      log.error("Failed to retrieve issues for metrics:", issuesError.message);
+      return res.status(500).json({ error: "Failed to fetch metrics" });
+    }
 
-    // 1. Average resolution time computation
+    const total = issuesRaw.length;
+    let resolvedCount = 0;
+    let pendingCount = 0;
+    const activeCitizens = new Set();
+    let totalResolutionTimeMs = 0;
+    let resolvedWithTimeCount = 0;
+
+    const categoryCounts = {};
+    let topRiskIssue = null;
+    let topPriorityIssue = null;
+
+    issuesRaw.forEach(i => {
+      if (i.status === 'resolved') {
+        resolvedCount++;
+      } else if (i.status === 'reported') {
+        pendingCount++;
+      }
+
+      if (i.user_id) {
+        activeCitizens.add(i.user_id);
+      }
+
+      const createdDate = new Date(i.created_at);
+      const resolvedDate = i.resolved_at ? new Date(i.resolved_at) : null;
+      if (resolvedDate) {
+        const diffTime = resolvedDate.getTime() - createdDate.getTime();
+        if (diffTime >= 0) {
+          totalResolutionTimeMs += diffTime;
+          resolvedWithTimeCount++;
+        }
+      }
+
+      // Count categories
+      const categoryName = categoryMap[i.category] || i.category;
+      categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+
+      // Find top risk issue (critical risk_level)
+      if (i.risk_level === 'critical') {
+        if (!topRiskIssue || i.priority > topRiskIssue.priority) {
+          topRiskIssue = i;
+        }
+      }
+      
+      // Find top priority issue generally
+      if (!topPriorityIssue || i.priority > topPriorityIssue.priority) {
+        topPriorityIssue = i;
+      }
+    });
+
+    const avgResolutionDays = resolvedWithTimeCount > 0 
+      ? Math.round(totalResolutionTimeMs / (resolvedWithTimeCount * 24 * 60 * 60 * 1000))
+      : 12;
+
     const averageResolutionTime = total > 0 && avgResolutionDays > 0 
       ? `${avgResolutionDays} days` 
-      : "12 days"; // Fallback default if no resolved issues exist yet
+      : "12 days";
 
-    // 2. Compute citizen community engagement metric
     const communityEngagement = totalUsers > 0 
-      ? `${Math.min(100, Math.round((activeCitizens / totalUsers) * 100))}%`
+      ? `${Math.min(100, Math.round((activeCitizens.size / totalUsers) * 100))}%`
       : "94%";
 
-    // 3. Issue verification rate computation
-    const verifiedIssues = total - pending;
+    const verifiedIssues = total - pendingCount;
     const issueVerificationRate = total > 0 
       ? `${Math.round((verifiedIssues / total) * 100)}%`
       : "87%";
 
-    // 4. Determine top issue category
-    const { data: topCategoryData } = await supabase
-      .from("issues_by_category")
-      .select("*")
-      .limit(1);
-    
-    const topIssueCategory = topCategoryData && topCategoryData.length > 0
-      ? categoryMap[topCategoryData[0].category] || topCategoryData[0].category
-      : "Potholes";
-
-    // 5. Determine high priority/critical risk area from database logs
-    const { data: topRiskIssue } = await supabase
-      .from("issues")
-      .select("location")
-      .eq("risk_level", "critical")
-      .order("priority", { ascending: false })
-      .limit(1);
+    // Sort categories to get top category
+    const sortedCategories = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
+    const topIssueCategory = sortedCategories.length > 0 ? sortedCategories[0] : "Potholes";
 
     let highestRiskArea = "Downtown District";
-    if (topRiskIssue && topRiskIssue.length > 0 && topRiskIssue[0].location) {
-      highestRiskArea = topRiskIssue[0].location;
-    } else {
-      const { data: anyRiskIssue } = await supabase
-        .from("issues")
-        .select("location")
-        .order("priority", { ascending: false })
-        .limit(1);
-      if (anyRiskIssue && anyRiskIssue.length > 0 && anyRiskIssue[0].location) {
-        highestRiskArea = anyRiskIssue[0].location;
-      }
+    if (topRiskIssue && topRiskIssue.location) {
+      highestRiskArea = topRiskIssue.location;
+    } else if (topPriorityIssue && topPriorityIssue.location) {
+      highestRiskArea = topPriorityIssue.location;
     }
 
-    // Assemble metrics packet
+    log.info(`Dashboard metrics processed in ${Date.now() - tStart} ms`);
+
     const metrics = {
       averageResolutionTime,
       communityEngagement,
