@@ -5,10 +5,10 @@
  */
 
 import { Link, Outlet } from "react-router-dom";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/common/Logo";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
-import { APP_TAGLINE } from "@/utils/constants";
+import { APP_TAGLINE, ROUTES } from "@/utils/constants";
 
 // Brand panel promotional highlight bullets
 const HIGHLIGHTS = [
@@ -57,11 +57,17 @@ export function AuthLayout({ children }) {
       {/* Main Container Form Panel */}
       <main className="flex flex-1 flex-col">
         <header className="flex items-center justify-between p-6">
-          {/* Mobil logo representation */}
-          <Link to="/" className="inline-flex lg:hidden">
-            <Logo />
+          <Link
+            to={ROUTES.DASHBOARD}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Back to Dashboard
           </Link>
-          <div className="ml-auto">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="inline-flex lg:hidden">
+              <Logo />
+            </Link>
             <ThemeToggle />
           </div>
         </header>
