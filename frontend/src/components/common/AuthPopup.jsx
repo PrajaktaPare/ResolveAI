@@ -185,7 +185,7 @@ export function AuthPopup() {
                 error={errors.otp?.message}
                 {...register("otp", {
                   required: "Verification code is required",
-                  pattern: { value: /^\d{6}$/, message: "Code must be exactly 6 digits" },
+                pattern: { value: /^\d{6,8}$/, message: "Code must be 6 to 8 digits" },
                 })}
               />
 
