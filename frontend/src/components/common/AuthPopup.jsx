@@ -40,6 +40,10 @@ export function AuthPopup() {
   });
 
   const onSendOtp = async (values) => {
+    if (values.email.toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase()) {
+      return handleDemoLogin();
+    }
+
     try {
       setEmailAddress(values.email);
       if (mode === "login") {
@@ -91,38 +95,7 @@ export function AuthPopup() {
           </p>
         </div>
 
-        {/* ── Demo Account Quick-Access (always visible) ── */}
-        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-            <Sparkles className="size-3.5" />
-            Quick Demo Access for Evaluators
-          </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Email: <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{DEMO_CREDENTIALS.email}</code>
-            {" "}&bull;{" "}
-            OTP: <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{DEMO_CREDENTIALS.otpCode}</code>
-          </p>
-          <Button
-            type="button"
-            className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground"
-            size="default"
-            onClick={handleDemoLogin}
-            disabled={isDemoLoading}
-          >
-            {isDemoLoading ? (
-              <Spinner className="text-primary-foreground" />
-            ) : (
-              <Sparkles className="size-4" />
-            )}
-            {isDemoLoading ? "Signing in..." : "Try Demo Account \u2014 1 Click"}
-          </Button>
-        </div>
 
-        <div className="relative flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">or sign in manually</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
 
         {step === "email" ? (
           <>
@@ -151,17 +124,24 @@ export function AuthPopup() {
                 />
               )}
 
-              <FormField
-                id="email"
-                label="Email Address"
-                type="email"
-                placeholder="you@example.com"
-                error={errors.email?.message}
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
-                })}
-              />
+              <div>
+                <FormField
+                  id="email"
+                  label="Email Address"
+                  type="email"
+                  placeholder="you@example.com"
+                  error={errors.email?.message}
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
+                  })}
+                />
+                {mode === "login" && (
+                  <p className="text-xs text-center text-muted-foreground/80 mt-2">
+                    Demo email: {DEMO_CREDENTIALS.email}
+                  </p>
+                )}
+              </div>
 
               {mode === "register" && (
                 <FormField
@@ -174,15 +154,17 @@ export function AuthPopup() {
                 />
               )}
 
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? (
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || isDemoLoading}>
+                {isSubmitting || isDemoLoading ? (
                   <Spinner className="text-primary-foreground" />
                 ) : mode === "login" ? (
                   <LogIn className="size-4" />
                 ) : (
                   <UserPlus className="size-4" />
                 )}
-                {isSubmitting
+                {isDemoLoading
+                  ? "Signing in..."
+                  : isSubmitting
                   ? "Sending code..."
                   : mode === "login"
                   ? "Send Login Code"

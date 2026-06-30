@@ -165,6 +165,11 @@ export async function signIn({ email }) {
  * Invalidates user session tokens and flushes local caching stores.
  */
 export async function signOut() {
+  // ALWAYS clear local mock session (in case user was logged in via Demo Account)
+  localStorage.removeItem("resolve_ai_session");
+  localStorage.removeItem("resolve_ai_user");
+  localSession = null;
+
   if (!isSupabaseConfigured) {
     // Mock Logout Flow
     log.info("Signing out (mock backend)");
@@ -174,11 +179,6 @@ export async function signOut() {
       log.warn("Mock logout endpoint call failed:", e.message);
     }
     
-    // Purge local storage caches
-    localStorage.removeItem("resolve_ai_session");
-    localStorage.removeItem("resolve_ai_user");
-    localSession = null;
-    
     // Notify all listeners of session expiration
     listeners.forEach((cb) => cb(null));
     return;
@@ -187,6 +187,10 @@ export async function signOut() {
   // Supabase Logout Flow
   log.info("Signing out (Supabase)");
   const { error } = await supabase.auth.signOut();
+  
+  // We manually trigger listeners because if there was only a mock session, Supabase might not fire a change event
+  listeners.forEach((cb) => cb(null));
+
   if (error) throw error;
 }
 
@@ -328,8 +332,10 @@ export async function getProfile(userId) {
  * @returns {() => void} Unsubscribe function call.
  */
 export function onAuthStateChange(callback) {
+  // Always add to our custom listeners so mock logins can trigger state updates
+  listeners.add(callback);
+
   if (!isSupabaseConfigured) {
-    listeners.add(callback);
     // Execute callback immediately with current active session
     getSession().then((session) => callback(session));
     return () => {
@@ -340,6 +346,18 @@ export function onAuthStateChange(callback) {
   // Set up Supabase event change handler subscription
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => callback(session));
-  return () => subscription.unsubscribe();
+  } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (!session) {
+      // If Supabase has no session, check if we have a local mock demo session
+      const mockSession = await getSession();
+      callback(mockSession);
+    } else {
+      callback(session);
+    }
+  });
+
+  return () => {
+    listeners.delete(callback);
+    subscription.unsubscribe();
+  };
 }
