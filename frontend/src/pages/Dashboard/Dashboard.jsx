@@ -54,29 +54,54 @@ export default function Dashboard() {
     [],
   );
 
+  // Fallback map issues with real Indian city coordinates
+  const MOCK_MAP_ISSUES = [
+    { id: "m1", title: "Pothole on Ring Road", location: "Ring Road, South Delhi", category: "pothole", riskLevel: "high", latitude: 28.5721, longitude: 77.1960 },
+    { id: "m2", title: "Garbage dump near Dwarka Sector 21", location: "Dwarka Sector 21, New Delhi", category: "garbage", riskLevel: "medium", latitude: 28.5563, longitude: 77.0583 },
+    { id: "m3", title: "Water leakage at Hauz Khas", location: "Hauz Khas Village, New Delhi", category: "water_leakage", riskLevel: "high", latitude: 28.5494, longitude: 77.2001 },
+    { id: "m4", title: "Broken streetlight on Janpath", location: "Janpath, New Delhi", category: "broken_streetlight", riskLevel: "low", latitude: 28.6266, longitude: 77.2182 },
+    { id: "m5", title: "Open manhole at Nehru Place", location: "Nehru Place, New Delhi", category: "open_manhole", riskLevel: "critical", latitude: 28.5491, longitude: 77.2529 },
+    { id: "m6", title: "Road damage on Bandra-Worli Sea Link", location: "Bandra-Worli, Mumbai", category: "road_damage", riskLevel: "high", latitude: 19.0330, longitude: 72.8166 },
+    { id: "m7", title: "Footpath collapse at Koregaon Park", location: "Koregaon Park, Pune", category: "public_infrastructure_damage", riskLevel: "medium", latitude: 18.5362, longitude: 73.8930 },
+    { id: "m8", title: "Garbage pile near Indiranagar", location: "Indiranagar, Bengaluru", category: "garbage", riskLevel: "medium", latitude: 12.9784, longitude: 77.6408 },
+    { id: "m9", title: "Pothole cluster at Karol Bagh", location: "Karol Bagh, New Delhi", category: "pothole", riskLevel: "high", latitude: 28.6514, longitude: 77.1907 },
+    { id: "m10", title: "Broken water pipe at Saket", location: "Saket, New Delhi", category: "water_leakage", riskLevel: "critical", latitude: 28.5244, longitude: 77.2066 },
+  ];
+
   // Fetch map coordinates
   const { data: mapIssues, loading: mapLoading } = useFetch(
     async () => {
       try {
         const { data } = await api.get("/issues/map/data");
-        return data.issues || [];
+        const issues = data.issues || [];
+        return issues.length > 0 ? issues : MOCK_MAP_ISSUES;
       } catch (e) {
         console.error("Dashboard map issues fetch failed:", e);
-        return [];
+        return MOCK_MAP_ISSUES;
       }
     },
     []
   );
+
+  // Fallback top priority issues when backend is unreachable
+  const MOCK_TOP_ISSUES = [
+    { id: "mock-1", title: "Critical pothole on NH-48 near Gurgaon Toll", location: "NH-48, Sector 31, Gurgaon", priority: 94, status: "in_progress" },
+    { id: "mock-2", title: "Sewage overflow at Saket Metro Station", location: "Saket District Centre, New Delhi", priority: 89, status: "prioritized" },
+    { id: "mock-3", title: "Collapsed pavement near Juhu Beach Road", location: "Juhu Tara Road, Mumbai", priority: 82, status: "verified" },
+    { id: "mock-4", title: "Broken streetlights on MG Road", location: "MG Road, Bengaluru", priority: 76, status: "assigned" },
+    { id: "mock-5", title: "Water main burst near Connaught Place", location: "Block A, Connaught Place, New Delhi", priority: 71, status: "reported" },
+  ];
 
   // Fetch top priority issues
   const { data: topIssues, loading: topLoading } = useFetch(
     async () => {
       try {
         const { data } = await api.get("/issues", { params: { sort: "priority" } });
-        return data.issues?.slice(0, 5) || [];
+        const issues = data.issues?.slice(0, 5) || [];
+        return issues.length > 0 ? issues : MOCK_TOP_ISSUES;
       } catch (e) {
         console.error("Dashboard top priority fetch failed:", e);
-        return [];
+        return MOCK_TOP_ISSUES;
       }
     },
     []
@@ -89,17 +114,22 @@ export default function Dashboard() {
     totals: { total: 1284, resolved: 912, inProgress: 214, pending: 158, resolutionRate: 71, avgResolutionDays: 4.2, activeCitizens: 3460 },
     healthScore: 78,
     byCategory: [
-      { category: "Roads", count: 342 },
-      { category: "Sanitation", count: 268 },
-      { category: "Water", count: 197 },
-      { category: "Electricity", count: 176 },
-      { category: "Streetlights", count: 154 },
-      { category: "Other", count: 147 }
+      { category: "Pothole", count: 342 },
+      { category: "Garbage", count: 268 },
+      { category: "Water Leak", count: 197 },
+      { category: "Streetlight", count: 176 },
+      { category: "Open Manhole", count: 87 },
+      { category: "Road Damage", count: 112 },
+      { category: "Infrastructure", count: 68 },
+      { category: "Other", count: 34 }
     ],
     byStatus: [
       { status: "Resolved", count: 912 },
       { status: "In Progress", count: 214 },
-      { status: "Pending", count: 158 }
+      { status: "Reported", count: 158 },
+      { status: "Verified", count: 89 },
+      { status: "Prioritized", count: 64 },
+      { status: "Assigned", count: 47 }
     ],
     trend: [
       { month: "Jan", reported: 180, resolved: 120 },

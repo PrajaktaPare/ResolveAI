@@ -11,6 +11,27 @@ import { logger } from "@/utils/logger";
 
 const log = logger.child("auth");
 
+// ─── Demo Account Credentials ───────────────────────────────────────────────
+// Pre-configured demo account for judges / evaluators to instantly access the platform.
+export const DEMO_CREDENTIALS = {
+  email: "demo@resolveai.com",
+  otpCode: "123456",
+};
+
+const DEMO_USER_PROFILE = {
+  id: "demo_user_arjun_mehta_001",
+  email: DEMO_CREDENTIALS.email,
+  full_name: "Arjun Mehta",
+  phone: "+91 98765 43210",
+  role: "admin",
+  reputation_score: 2450,
+  location: "New Delhi, India",
+  bio: "Community lead & civic technology advocate. Helping make Indian cities smarter and safer through data-driven issue resolution.",
+  avatar_url: null,
+  created_at: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(), // ~6 months ago
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // In-memory cache for mock session states
 let localSession = null;
 
@@ -25,7 +46,9 @@ const listeners = new Set();
  * @returns {Promise<Object>} Result message.
  */
 export async function sendOtp({ email, fullName, phone }) {
-  if (!isSupabaseConfigured) {
+  const isDemoAccount = email.toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase();
+
+  if (!isSupabaseConfigured || isDemoAccount) {
     log.info("Sending OTP (mock backend):", email);
     localStorage.setItem(
       "resolve_ai_mock_otp_reg",
@@ -62,7 +85,9 @@ export async function sendOtp({ email, fullName, phone }) {
  * @returns {Promise<Object>} session and user context.
  */
 export async function verifyOtp({ email, token }) {
-  if (!isSupabaseConfigured) {
+  const isDemoAccount = email.toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase();
+
+  if (!isSupabaseConfigured || isDemoAccount) {
     log.info("Verifying OTP (mock backend):", email, token);
     if (!token) throw new Error("Verification code is required");
 
@@ -77,15 +102,18 @@ export async function verifyOtp({ email, token }) {
       } catch (e) {}
     }
 
-    const mockUser = {
-      id: "mock_user_" + Math.random().toString(36).substr(2, 9),
-      email,
-      full_name: metadata.fullName || email.split("@")[0],
-      phone: metadata.phone || null,
-      role: "citizen",
-      reputation_score: 0,
-      created_at: new Date().toISOString(),
-    };
+    // Use pre-configured demo profile for the demo account email
+    const mockUser = isDemoAccount
+      ? { ...DEMO_USER_PROFILE }
+      : {
+          id: "mock_user_" + Math.random().toString(36).substr(2, 9),
+          email,
+          full_name: metadata.fullName || email.split("@")[0],
+          phone: metadata.phone || null,
+          role: "citizen",
+          reputation_score: 0,
+          created_at: new Date().toISOString(),
+        };
 
     const mockSession = {
       access_token: `mock_token_${Date.now()}`,
@@ -190,39 +218,72 @@ export async function requestPasswordReset(email) {
  * @returns {Promise<Object|null>} Decoded user session packet.
  */
 export async function getSession() {
-  if (!isSupabaseConfigured) {
-    // Read session keys from local cache memory
-    if (!localSession) {
-      const stored = localStorage.getItem("resolve_ai_session");
-      if (stored) {
-        try {
-          localSession = JSON.parse(stored);
-        } catch (e) {
-          localStorage.removeItem("resolve_ai_session");
-        }
-      }
+  let session = null;
+
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      log.error("Supabase getSession error:", error.message);
+    } else {
+      session = data?.session;
     }
-    
-    if (localSession) {
-      const userStored = localStorage.getItem("resolve_ai_user");
-      let user = null;
-      if (userStored) {
-        try {
-          user = JSON.parse(userStored);
-        } catch (e) {}
-      }
-      return {
-        ...localSession,
-        user: user || { id: "mock_user_id", email: "user@example.com" },
-      };
-    }
-    return null;
   }
 
-  // Fetch session parameters directly from the Supabase browser storage client
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
+  if (session) return session;
+
+  // Fallback to local mock session (used for demo account even if Supabase is configured)
+  if (!localSession) {
+    const stored = localStorage.getItem("resolve_ai_session");
+    if (stored) {
+      try {
+        localSession = JSON.parse(stored);
+      } catch (e) {
+        localStorage.removeItem("resolve_ai_session");
+      }
+    }
+  }
+  
+  if (localSession) {
+    const userStored = localStorage.getItem("resolve_ai_user");
+    let user = null;
+    if (userStored) {
+      try {
+        user = JSON.parse(userStored);
+      } catch (e) {}
+    }
+    return {
+      ...localSession,
+      user: user || { id: "mock_user_id", email: "user@example.com" },
+    };
+  }
+
+  return null;
+}
+
+/**
+ * _getDemoOrFallbackProfile
+ * Returns the demo profile if the user matches the demo account, otherwise a generic fallback.
+ */
+function _getDemoOrFallbackProfile(userId) {
+  if (userId === DEMO_USER_PROFILE.id) {
+    return { ...DEMO_USER_PROFILE };
+  }
+  // Also check localStorage for demo user
+  const userStored = localStorage.getItem("resolve_ai_user");
+  if (userStored) {
+    try {
+      const parsed = JSON.parse(userStored);
+      if (parsed.email?.toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase()) {
+        return { ...DEMO_USER_PROFILE, id: parsed.id || userId };
+      }
+    } catch (e) {}
+  }
+  return {
+    id: userId,
+    full_name: "John Citizen",
+    email: "user@example.com",
+    role: "citizen",
+  };
 }
 
 /**
@@ -237,12 +298,7 @@ export async function getProfile(userId) {
     log.info("Fetching profile (mock backend)");
     try {
       const { data } = await api.get("/auth/profile");
-      return data.user || {
-        id: userId,
-        full_name: "John Citizen",
-        email: "user@example.com",
-        role: "citizen",
-      };
+      return data.user || _getDemoOrFallbackProfile(userId);
     } catch (e) {
       // Fallback: Read profile settings directly from local memory if backend server is offline
       const userStored = localStorage.getItem("resolve_ai_user");
@@ -251,12 +307,7 @@ export async function getProfile(userId) {
           return JSON.parse(userStored);
         } catch (err) {}
       }
-      return {
-        id: userId,
-        full_name: "John Citizen",
-        email: "user@example.com",
-        role: "citizen",
-      };
+      return _getDemoOrFallbackProfile(userId);
     }
   }
 

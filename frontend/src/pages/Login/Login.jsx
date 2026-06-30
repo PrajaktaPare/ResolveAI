@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogIn, KeyRound, Mail, ArrowLeft } from "lucide-react";
+import { LogIn, KeyRound, Mail, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { DEMO_CREDENTIALS } from "@/services/authService";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { FormField } from "@/components/common/FormField";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +22,24 @@ export default function Login() {
   const [step, setStep] = useState("email"); // "email" or "otp"
   const [emailAddress, setEmailAddress] = useState("");
   const [isSubmittingOtp, setIsSubmittingOtp] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+
+  // One-click demo login handler for judges / evaluators
+  async function handleDemoLogin() {
+    try {
+      setIsDemoLoading(true);
+      setEmailAddress(DEMO_CREDENTIALS.email);
+      await signIn({ email: DEMO_CREDENTIALS.email });
+      await verifyOtp({ email: DEMO_CREDENTIALS.email, token: DEMO_CREDENTIALS.otpCode });
+      toast.success("Welcome to the demo! Logged in as Arjun Mehta (Admin).");
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      log.error("Demo login failed:", err.message);
+      toast.error("Demo login failed. Please try manually with the credentials below.");
+    } finally {
+      setIsDemoLoading(false);
+    }
+  }
 
   const {
     register,
@@ -31,6 +50,10 @@ export default function Login() {
   const redirectTo = location.state?.from?.pathname || ROUTES.DASHBOARD;
 
   async function onSendOtp(values) {
+    if (values.email.toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase()) {
+      return handleDemoLogin();
+    }
+
     try {
       setEmailAddress(values.email);
       await signIn({ email: values.email });
@@ -74,26 +97,31 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit(onSendOtp)} className="mt-6 space-y-4" noValidate>
-            <FormField
-              id="email"
-              label="Email Address"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              error={errors.email?.message}
-              {...register("email", {
-                required: "Email is required",
-                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
-              })}
-            />
+            <div>
+              <FormField
+                id="email"
+                label="Email Address"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                error={errors.email?.message}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
+                })}
+              />
+              <p className="text-xs text-center text-muted-foreground/80 mt-2">
+                Demo email: {DEMO_CREDENTIALS.email}
+              </p>
+            </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || isDemoLoading}>
+              {isSubmitting || isDemoLoading ? (
                 <Spinner className="text-primary-foreground" />
               ) : (
                 <Mail className="size-4" />
               )}
-              {isSubmitting ? "Sending code..." : "Send Verification Code"}
+              {isSubmitting || isDemoLoading ? "Signing in..." : "Send Verification Code"}
             </Button>
           </form>
         </>

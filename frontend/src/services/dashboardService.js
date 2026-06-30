@@ -5,7 +5,7 @@
  */
 
 import { api } from "@/config/api";
-import logger from "@/utils/logger";
+import { logger } from "@/utils/logger";
 
 /**
  * buildMockStats

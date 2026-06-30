@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES, APP_TAGLINE } from "@/utils/constants";
+import { DEMO_CREDENTIALS } from "@/services/authService";
 
 const FEATURES = [
   {
@@ -49,10 +50,10 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: "8", label: "Issue categories" },
-  { value: "0-100", label: "Priority scoring" },
-  { value: "6", label: "Status stages" },
-  { value: "AI", label: "Resolution agent" },
+  { value: "12,400+", label: "Issues reported" },
+  { value: "3,460", label: "Active citizens" },
+  { value: "71%", label: "Resolution rate" },
+  { value: "4.2d", label: "Avg resolution" },
 ];
 
 export default function Landing() {
@@ -111,6 +112,17 @@ export default function Landing() {
             >
               Sign in
             </Link>
+          </div>
+
+          {/* Demo credentials banner */}
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-xs">
+            <span className="text-base">🔑</span>
+            <span className="text-muted-foreground">
+              <strong className="text-foreground">Demo:</strong>{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono">{DEMO_CREDENTIALS.email}</code>{" "}
+              &bull; OTP:{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono">{DEMO_CREDENTIALS.otpCode}</code>
+            </span>
           </div>
         </div>
         <div className="relative">

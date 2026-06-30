@@ -10,12 +10,37 @@ import winston from "winston";
 import path from "path";
 import fs from "fs";
 
+// Detect serverless environment (Vercel sets VERCEL=1 automatically)
+const isServerless = !!process.env.VERCEL;
 const logDir = "logs";
 
-// Ensure logs directory exists
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+// Ensure logs directory exists (skip in serverless — filesystem is read-only)
+if (!isServerless) {
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+  }
 }
+
+// Build transport list based on execution environment
+const transports = isServerless
+  ? [
+      // Serverless: console-only (visible in Vercel Function Logs dashboard)
+      new winston.transports.Console({ format: winston.format.json() }),
+    ]
+  : [
+      // Container / local: persist logs to rotating files
+      new winston.transports.File({
+        filename: path.join(logDir, "error.log"),
+        level: "error",
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      }),
+      new winston.transports.File({
+        filename: path.join(logDir, "combined.log"),
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      }),
+    ];
 
 // Create the primary Winston logger instance
 const loggerInstance = winston.createLogger({
@@ -26,21 +51,7 @@ const loggerInstance = winston.createLogger({
     winston.format.splat(),
     winston.format.json()
   ),
-  transports: [
-    // Save error level logs only
-    new winston.transports.File({
-      filename: path.join(logDir, "error.log"),
-      level: "error",
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-    // Save all logs
-    new winston.transports.File({
-      filename: path.join(logDir, "combined.log"),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-  ],
+  transports,
 });
 
 // Output formatted logs to terminal in development/local environments

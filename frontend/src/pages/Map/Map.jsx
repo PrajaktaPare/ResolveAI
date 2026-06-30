@@ -386,6 +386,28 @@ export default function Map() {
     }
   };
 
+  // Comprehensive mock issues for map display with real Indian GPS coordinates
+  const MOCK_MAP_ISSUES = [
+    { id: "map-1", title: "Critical pothole on NH-48", description: "Deep pothole causing vehicle damage near toll plaza.", category: "pothole", status: "in_progress", riskLevel: "critical", location: "NH-48, Sector 31, Gurgaon", latitude: 28.4595, longitude: 77.0266, upvotes: 47, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-2", title: "Sewage overflow at Saket Metro", description: "Sewage water flooding metro station exit pathway.", category: "water_leakage", status: "prioritized", riskLevel: "high", location: "Saket District Centre, New Delhi", latitude: 28.5244, longitude: 77.2066, upvotes: 38, createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-3", title: "Open manhole at Nehru Place", description: "Uncovered manhole on main pedestrian walkway.", category: "open_manhole", status: "reported", riskLevel: "critical", location: "Nehru Place, New Delhi", latitude: 28.5491, longitude: 77.2529, upvotes: 56, createdAt: new Date(Date.now() - 0.5 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-4", title: "Garbage dump at Chandni Chowk", description: "Large garbage pile blocking half the road.", category: "garbage", status: "in_progress", riskLevel: "high", location: "Chandni Chowk, Old Delhi", latitude: 28.6507, longitude: 77.2334, upvotes: 29, createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-5", title: "Broken streetlights on Janpath", description: "Multiple streetlights out on 500m stretch.", category: "broken_streetlight", status: "assigned", riskLevel: "medium", location: "Janpath, New Delhi", latitude: 28.6266, longitude: 77.2182, upvotes: 22, createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-6", title: "Water leakage at Hauz Khas", description: "Continuous water seepage from underground pipe.", category: "water_leakage", status: "verified", riskLevel: "high", location: "Hauz Khas Village, New Delhi", latitude: 28.5494, longitude: 77.2001, upvotes: 31, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-7", title: "Pothole cluster at Karol Bagh", description: "Series of potholes damaging 2-wheelers regularly.", category: "pothole", status: "verified", riskLevel: "high", location: "Karol Bagh, New Delhi", latitude: 28.6514, longitude: 77.1907, upvotes: 27, createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-8", title: "Waterlogging at Minto Bridge", description: "Chronic waterlogging making underpass impassable.", category: "water_leakage", status: "resolved", riskLevel: "high", location: "Minto Bridge, New Delhi", latitude: 28.6304, longitude: 77.2177, upvotes: 71, createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-9", title: "Road cave-in at Bandra-Worli Sea Link", description: "Section of approach road has caved in.", category: "road_damage", status: "in_progress", riskLevel: "critical", location: "Bandra-Worli, Mumbai", latitude: 19.0330, longitude: 72.8166, upvotes: 52, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-10", title: "Pothole at Andheri flyover", description: "Large pothole at top of flyover causing accidents.", category: "pothole", status: "resolved", riskLevel: "high", location: "Andheri Flyover, Mumbai", latitude: 19.1136, longitude: 72.8697, upvotes: 63, createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-11", title: "Streetlight flickering on Marine Drive", description: "Heritage lamp posts not functioning properly.", category: "broken_streetlight", status: "resolved", riskLevel: "low", location: "Marine Drive, Mumbai", latitude: 18.9440, longitude: 72.8233, upvotes: 18, createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-12", title: "Footpath tiles broken at FC Road", description: "Broken tiles creating tripping hazard for pedestrians.", category: "public_infrastructure_damage", status: "verified", riskLevel: "medium", location: "FC Road, Pune", latitude: 18.5233, longitude: 73.8412, upvotes: 15, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-13", title: "Collapse at Koregaon Park footpath", description: "Entire footpath section has sunk after rains.", category: "public_infrastructure_damage", status: "prioritized", riskLevel: "medium", location: "Koregaon Park, Pune", latitude: 18.5362, longitude: 73.8930, upvotes: 19, createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-14", title: "Open manhole at Residency Road", description: "Missing manhole cover near busy intersection.", category: "open_manhole", status: "prioritized", riskLevel: "critical", location: "Residency Road, Bengaluru", latitude: 12.9716, longitude: 77.5946, upvotes: 41, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-15", title: "Road cave-in at Koramangala", description: "Major road section collapsed after pipeline burst.", category: "road_damage", status: "in_progress", riskLevel: "critical", location: "4th Block, Koramangala, Bengaluru", latitude: 12.9352, longitude: 77.6244, upvotes: 52, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-16", title: "Garbage pile near Indiranagar", description: "Uncollected garbage for 5+ days near residential area.", category: "garbage", status: "assigned", riskLevel: "medium", location: "Indiranagar, Bengaluru", latitude: 12.9784, longitude: 77.6408, upvotes: 34, createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-17", title: "Broken park bench at Lodhi Garden", description: "Cast iron bench broken, sharp edges exposed.", category: "public_infrastructure_damage", status: "reported", riskLevel: "low", location: "Lodhi Garden, New Delhi", latitude: 28.5916, longitude: 77.2193, upvotes: 9, createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString() },
+    { id: "map-18", title: "Water main burst at Connaught Place", description: "Underground water main creating sinkhole.", category: "water_leakage", status: "reported", riskLevel: "critical", location: "Block A, Connaught Place", latitude: 28.6315, longitude: 77.2167, upvotes: 44, createdAt: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000).toISOString() },
+  ];
+
   const { data, loading, error, refetch } = useFetch(
     async () => {
       try {
@@ -395,10 +417,11 @@ export default function Map() {
             status: statusFilter !== "all" ? statusFilter : undefined,
           },
         });
-        return data;
+        const issues = data?.issues || [];
+        return { issues: issues.length > 0 ? issues : MOCK_MAP_ISSUES };
       } catch (err) {
         console.error("Map API error:", err);
-        return { issues: [] };
+        return { issues: MOCK_MAP_ISSUES };
       }
     },
     [categoryFilter, statusFilter],

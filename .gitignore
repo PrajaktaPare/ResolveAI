@@ -22,3 +22,10 @@ logs/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Docker
+*.tar
+docker-compose.override.yml
+
+# GCP
+.gcloudignore

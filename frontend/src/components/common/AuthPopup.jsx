@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { LogIn, KeyRound, Mail, ArrowLeft, UserPlus, Shield } from "lucide-react";
+import { LogIn, KeyRound, Mail, ArrowLeft, UserPlus, Shield, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { DEMO_CREDENTIALS } from "@/services/authService";
 import { FormField } from "@/components/common/FormField";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -13,6 +14,21 @@ export function AuthPopup() {
   const [mode, setMode] = useState("login"); // "login" or "register"
   const [emailAddress, setEmailAddress] = useState("");
   const [isSubmittingOtp, setIsSubmittingOtp] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+
+  // One-click demo login handler for judges / evaluators
+  async function handleDemoLogin() {
+    try {
+      setIsDemoLoading(true);
+      await signIn({ email: DEMO_CREDENTIALS.email });
+      await verifyOtp({ email: DEMO_CREDENTIALS.email, token: DEMO_CREDENTIALS.otpCode });
+      toast.success("Welcome to the demo! Logged in as Arjun Mehta (Admin).");
+    } catch (err) {
+      toast.error("Demo login failed. Try manually with the credentials below.");
+    } finally {
+      setIsDemoLoading(false);
+    }
+  }
 
   const {
     register,
@@ -75,11 +91,38 @@ export function AuthPopup() {
           </p>
         </div>
 
-        {!configured && (
-          <p className="mb-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-[11px] text-warning-foreground text-center">
-            Database unconfigured. Using mock OTP mode (enter code: 123456).
+        {/* ── Demo Account Quick-Access (always visible) ── */}
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+            <Sparkles className="size-3.5" />
+            Quick Demo Access for Evaluators
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Email: <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{DEMO_CREDENTIALS.email}</code>
+            {" "}&bull;{" "}
+            OTP: <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{DEMO_CREDENTIALS.otpCode}</code>
           </p>
-        )}
+          <Button
+            type="button"
+            className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground"
+            size="default"
+            onClick={handleDemoLogin}
+            disabled={isDemoLoading}
+          >
+            {isDemoLoading ? (
+              <Spinner className="text-primary-foreground" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            {isDemoLoading ? "Signing in..." : "Try Demo Account \u2014 1 Click"}
+          </Button>
+        </div>
+
+        <div className="relative flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">or sign in manually</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
 
         {step === "email" ? (
           <>

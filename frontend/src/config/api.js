@@ -5,7 +5,7 @@
  */
 
 import axios from "axios";
-import { supabase } from "./supabase";
+import { getSession } from "@/services/authService";
 import { logger } from "@/utils/logger";
 
 const log = logger.child("api");
@@ -26,26 +26,14 @@ export const api = axios.create({
 api.interceptors.request.use(async (config) => {
   let token = null;
 
-  // 1. Fetch token from active Supabase auth session if initialized
-  if (supabase) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  try {
+    const session = await getSession();
     token = session?.access_token;
-  } else {
-    // 2. Fallback: Parse token manually from localStorage cache if Supabase client is not loaded
-    const stored = localStorage.getItem("resolve_ai_session");
-    if (stored) {
-      try {
-        const session = JSON.parse(stored);
-        token = session?.access_token;
-      } catch (e) {
-        log.error("Failed to parse cached local session token:", e);
-      }
-    }
+  } catch (e) {
+    log.error("Failed to get session token for API request:", e);
   }
 
-  // 3. Inject Bearer token into configuration headers
+  // Inject Bearer token into configuration headers
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

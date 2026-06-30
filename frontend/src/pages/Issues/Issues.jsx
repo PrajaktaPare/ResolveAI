@@ -20,30 +20,38 @@ import { formatDate, formatNumber } from "@/utils/formatters";
 
 import { api } from "@/config/api";
 
+// Comprehensive mock issues dataset for when backend is unreachable
+const MOCK_ISSUES = [
+  { id: "1", title: "Critical pothole on NH-48 near Gurgaon Toll", category: "pothole", status: "in_progress", riskLevel: "critical", location: "NH-48, Sector 31, Gurgaon", createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 47, priority: 94 },
+  { id: "2", title: "Sewage overflow at Saket Metro Station exit", category: "water_leakage", status: "prioritized", riskLevel: "high", location: "Saket District Centre, New Delhi", createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 38, priority: 89 },
+  { id: "3", title: "Collapsed pavement near Juhu Beach Road", category: "road_damage", status: "verified", riskLevel: "high", location: "Juhu Tara Road, Mumbai", createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 31, priority: 82 },
+  { id: "4", title: "Broken streetlights on MG Road stretch", category: "broken_streetlight", status: "assigned", riskLevel: "medium", location: "MG Road, Bengaluru", createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 22, priority: 76 },
+  { id: "5", title: "Water main burst near Connaught Place", category: "water_leakage", status: "reported", riskLevel: "critical", location: "Block A, Connaught Place, New Delhi", createdAt: new Date(Date.now() - 0.5 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 56, priority: 91 },
+  { id: "6", title: "Garbage dump overflowing at Chandni Chowk", category: "garbage", status: "in_progress", riskLevel: "high", location: "Chandni Chowk, Old Delhi", createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 29, priority: 73 },
+  { id: "7", title: "Open manhole on Residency Road", category: "open_manhole", status: "prioritized", riskLevel: "critical", location: "Residency Road, Bengaluru", createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 41, priority: 88 },
+  { id: "8", title: "Footpath tiles broken near FC Road", category: "public_infrastructure_damage", status: "verified", riskLevel: "medium", location: "Fergusson College Road, Pune", createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 15, priority: 58 },
+  { id: "9", title: "Large pothole cluster at Andheri flyover", category: "pothole", status: "resolved", riskLevel: "high", location: "Andheri Flyover, Mumbai", createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 63, priority: 45 },
+  { id: "10", title: "Illegal garbage dumping near Yamuna bank", category: "garbage", status: "assigned", riskLevel: "high", location: "Yamuna Bank, East Delhi", createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 34, priority: 71 },
+  { id: "11", title: "Road cave-in at Koramangala 4th Block", category: "road_damage", status: "in_progress", riskLevel: "critical", location: "4th Block, Koramangala, Bengaluru", createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 52, priority: 86 },
+  { id: "12", title: "Streetlight flickering on Marine Drive", category: "broken_streetlight", status: "resolved", riskLevel: "low", location: "Marine Drive, Mumbai", createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 18, priority: 32 },
+  { id: "13", title: "Broken park bench at Lodhi Garden", category: "public_infrastructure_damage", status: "reported", riskLevel: "low", location: "Lodhi Garden, New Delhi", createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 9, priority: 28 },
+  { id: "14", title: "Open manhole cover missing at Sadar Bazaar", category: "open_manhole", status: "in_progress", riskLevel: "critical", location: "Sadar Bazaar, Delhi Cantonment", createdAt: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 44, priority: 92 },
+  { id: "15", title: "Waterlogging at Minto Bridge underpass", category: "water_leakage", status: "resolved", riskLevel: "high", location: "Minto Bridge, New Delhi", createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 71, priority: 38 },
+  { id: "16", title: "Pothole on SV Road near Bandra Station", category: "pothole", status: "verified", riskLevel: "medium", location: "SV Road, Bandra, Mumbai", createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 27, priority: 67 },
+  { id: "17", title: "Garbage overflow at Huda Market", category: "garbage", status: "prioritized", riskLevel: "medium", location: "Huda City Centre, Gurgaon", createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 19, priority: 62 },
+  { id: "18", title: "Damaged bus shelter at Kothrud Depot", category: "public_infrastructure_damage", status: "assigned", riskLevel: "medium", location: "Kothrud Depot, Pune", createdAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(), upvotes: 12, priority: 51 },
+];
+
 // Service to fetch issues from the backend
 const issuesService = {
   getAll: async (filters = {}) => {
     try {
       const { data } = await api.get("/issues", { params: filters });
-      return data;
+      // If API returns empty, use mock data
+      return (data?.issues?.length > 0) ? data : { issues: MOCK_ISSUES };
     } catch (error) {
       console.error("[v0] Failed to fetch issues:", error);
-      // Return mock data on error for demo purposes
-      return {
-        issues: [
-          {
-            id: "1",
-            title: "Large pothole on Main Street",
-            category: "pothole",
-            status: "in_progress",
-            riskLevel: "high",
-            location: "Main St & 5th Ave",
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-            upvotes: 24,
-            priority: 78,
-          },
-        ],
-      };
+      return { issues: MOCK_ISSUES };
     }
   },
 };

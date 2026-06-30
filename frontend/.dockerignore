@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+.env
+.env.*
+.git
+.gitignore
+.prettierrc.json
+.prettierignore
+*.md
+.vercel
+.vite
+.DS_Store
+Thumbs.db
